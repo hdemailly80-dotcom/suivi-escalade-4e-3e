@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Escalade – Suivi EPS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --card: #f4f6f9;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --green: #27ae60;
+    --orange: #e67e22;
+    --text: #1a1a2e;
+    --muted: #667788;
+    --input-bg: #ffffff;
+    --border: #ccd6e0;
+    --radius: 12px;
+    --fs: clamp(13px, 2.2vw, 16px);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: var(--fs);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .screen { display: none; width: 100%; max-width: 900px; }
+  .screen.active { display: flex; flex-direction: column; gap: 14px; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--accent2), #1a3a6e);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header .icon { font-size: 2em; }
+  .header h1 { font-size: clamp(1em, 3vw, 1.4em); font-weight: 700; color: #fff; }
+  .header p { font-size: 0.85em; color: #c8d4e6; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .card-title {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* GRID LAYOUT */
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .col { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; }
+  .col label { font-size: 0.85em; color: var(--muted); }
+
+  /* INPUTS */
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: var(--fs);
+    appearance: none;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+
+  /* TYPE SELECTOR */
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .type-btn {
+    background: var(--input-bg);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    color: var(--text);
+  }
+  .type-btn .tb-icon { font-size: 2em; margin-bottom: 6px; }
+  .type-btn .tb-label { font-size: 0.9em; font-weight: 600; }
+  .type-btn .tb-desc { font-size: 0.75em; color: var(--muted); margin-top: 4px; }
+  .type-btn:hover, .type-btn.selected {
+    border-color: var(--accent);
+    background: #fef0f3;
+  }
+  .type-btn.selected { background: #fde4ea; }
+
+  /* RADIO/CHOICE PILLS (oui/non) */
+  .pill-group { display: flex; gap: 10px; }
+  .pill-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+    font-weight: 600;
+    transition: all .2s;
+  }
+  .pill-btn.selected { border-color: var(--accent); background: #fde4ea; color: var(--accent); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: var(--fs);
+    font-weight: 700;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #c73652; }
+  .btn-secondary { background: var(--accent2); color: #fff; }
+  .btn-secondary:hover { background: #0a2840; }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { background: #1e8449; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn-row .btn { flex: 1; min-width: 120px; }
+
+  /* RECAP */
+  .recap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .recap-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .recap-item .ri-label { font-size: 0.75em; color: var(--muted); margin-bottom: 4px; }
+  .recap-item .ri-val { font-weight: 700; font-size: 1em; }
+
+  /* NOTE BOX */
+  .note-box {
+    background: linear-gradient(135deg, var(--green), #1e8449);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+  }
+  .note-box.zero { background: linear-gradient(135deg, var(--accent), #c73652); }
+  .note-box .nb-label { font-size: 0.85em; opacity: .9; }
+  .note-box .nb-val { font-size: 2em; font-weight: 800; }
+  .note-detail { font-size: 0.8em; color: var(--muted); margin-top: 6px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.9em;
+    transition: transform .4s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.error { background: var(--accent); }
+
+  /* LOADER */
+  .loader {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SUCCESS SCREEN */
+  .success-icon { font-size: 4em; text-align: center; }
+  .success-msg { text-align: center; font-size: 1.2em; font-weight: 700; }
+  .success-sub { text-align: center; color: var(--muted); font-size: 0.9em; }
+
+  /* SEARCH RESULTS */
+  .search-section-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 14px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .search-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    background: var(--input-bg);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .search-table th {
+    background: var(--accent2);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .search-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-table tr:last-child td { border-bottom: none; }
+  .search-note {
+    font-weight: 800;
+    color: var(--green);
+  }
+  .search-note.zero { color: var(--accent); }
+  .search-empty {
+    color: var(--muted);
+    font-size: 0.85em;
+    text-align: center;
+    padding: 14px;
+  }
+  .search-loading {
+    text-align: center;
+    padding: 14px;
+    color: var(--muted);
+    font-size: 0.9em;
+  }
+  @media (orientation: portrait) and (max-width: 600px) {
+    body::before {
+      content: "📱 Tourne ton appareil en mode paysage";
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1em; text-align: center; padding: 20px;
+      z-index: 9999;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ SCREEN 1 : IDENTITÉ ═══════════════════════════════ -->
+<div class="screen active" id="s-identity">
+  <div class="header">
+    <div class="icon">🧗</div>
+    <div>
+      <h1>Escalade – Suivi d'entraînement</h1>
+      <p>EPS Collège · Projet de réussite personnelle</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Mon identité</div>
+    <div class="row">
+      <div class="col">
+        <label>Classe</label>
+        <select id="classe">
+          <option value="">— Sélectionner —</option>
+          <option>4ème A</option><option>4ème B</option><option>4ème C</option><option>4ème D</option>
+          <option>3ème A</option><option>3ème B</option><option>3ème C</option><option>3ème D</option>
+        </select>
+      </div>
+      <div class="col">
+        <label>Pseudo</label>
+        <input type="text" id="pseudo" placeholder="Ton pseudo…" maxlength="30" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 Type de travail</div>
+    <div class="type-grid">
+      <div class="type-btn" id="btn-difficulte" onclick="selectType('difficulte')">
+        <div class="tb-icon">🏔️</div>
+        <div class="tb-label">Difficulté de voie</div>
+        <div class="tb-desc">Niveau, hauteur atteinte</div>
+      </div>
+      <div class="type-btn" id="btn-prises" onclick="selectType('prises')">
+        <div class="tb-icon">✋</div>
+        <div class="tb-label">Nombre de prises</div>
+        <div class="tb-desc">Comptage de prises de mains</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="goToSaisie()">Suivant →</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔎 Retrouver mes résultats</div>
+    <div class="row">
+      <div class="col" style="flex:2;">
+        <label>Pseudo à rechercher</label>
+        <input type="text" id="search-pseudo" placeholder="Ton pseudo…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')searchPseudo()">
+      </div>
+      <div class="col" style="flex:1; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="searchPseudo()" style="width:100%;">🔍 Rechercher</button>
+      </div>
+    </div>
+    <div id="search-results" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 2a : DIFFICULTÉ ═══════════════════════════ -->
+<div class="screen" id="s-difficulte">
+  <div class="header">
+    <div class="icon">🏔️</div>
+    <div>
+      <h1>Difficulté de voie</h1>
+      <p id="identity-badge-d"></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Saisie</div>
+    <div class="row">
+      <div class="col">
+        <label>Numéro de voie</label>
+        <input type="number" id="d-voie" placeholder="Ex : 3" min="1" max="99" oninput="updateNoteDifficulte()">
+      </div>
+      <div class="col">
+        <label>Niveau de difficulté tenté</label>
+        <select id="d-niveau" onchange="updateNoteDifficulte()"></select>
+      </div>
+      <div class="col">
+        <label>Hauteur atteinte</label>
+        <select id="d-hauteur" onchange="updateNoteDifficulte()">
+          <option value="">— Sélectionner —</option>
+          <option>3m</option><option>4m</option><option>5m</option><option>6m</option>
+          <option>Sommet atteint</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🪢 Nœud magique</div>
+    <div class="pill-group">
+      <div class="pill-btn" id="d-noeud-oui" onclick="setNoeud('d','Oui')">Oui</div>
+      <div class="pill-btn" id="d-noeud-non" onclick="setNoeud('d','Non')">Non</div>
+    </div>
+  </div>
+
+  <div class="note-box" id="d-note-box">
+    <div>
+      <div class="nb-label">Note actuelle</div>
+      <div class="note-detail" id="d-note-detail">Complète la saisie pour voir ta note</div>
+    </div>
+    <div class="nb-val" id="d-note-val">–</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goBack()">← Retour</button>
+    <button class="btn btn-primary" onclick="goToRecap()">Récapitulatif →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 2b : PRISES ════════════════════════════════ -->
+<div class="screen" id="s-prises">
+  <div class="header">
+    <div class="icon">✋</div>
+    <div>
+      <h1>Nombre de prises de mains</h1>
+      <p id="identity-badge-p"></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Saisie</div>
+    <div class="row">
+      <div class="col">
+        <label>Numéro de voie</label>
+        <input type="number" id="p-voie" placeholder="Ex : 3" min="1" max="99" oninput="updateNotePrises()">
+      </div>
+      <div class="col">
+        <label>Nombre de prises de mains</label>
+        <input type="number" id="p-prises" placeholder="Ex : 12" min="1" max="200" oninput="updateNotePrises()">
+      </div>
+      <div class="col">
+        <label>Sommet atteint ?</label>
+        <select id="p-sommet" onchange="updateNotePrises()">
+          <option value="">— Sélectionner —</option>
+          <option>Oui</option>
+          <option>Non</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🪢 Nœud magique</div>
+    <div class="pill-group">
+      <div class="pill-btn" id="p-noeud-oui" onclick="setNoeud('p','Oui')">Oui</div>
+      <div class="pill-btn" id="p-noeud-non" onclick="setNoeud('p','Non')">Non</div>
+    </div>
+  </div>
+
+  <div class="note-box" id="p-note-box">
+    <div>
+      <div class="nb-label">Note actuelle</div>
+      <div class="note-detail" id="p-note-detail">Complète la saisie pour voir ta note</div>
+    </div>
+    <div class="nb-val" id="p-note-val">–</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goBack()">← Retour</button>
+    <button class="btn btn-primary" onclick="goToRecap()">Récapitulatif →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 3 : RÉCAPITULATIF ═════════════════════════ -->
+<div class="screen" id="s-recap">
+  <div class="header">
+    <div class="icon">📊</div>
+    <div>
+      <h1>Récapitulatif</h1>
+      <p>Vérifie tes données avant d'enregistrer</p>
+    </div>
+  </div>
+
+  <div class="note-box" id="recap-note-box">
+    <div>
+      <div class="nb-label">Note finale</div>
+      <div class="note-detail" id="recap-note-detail"></div>
+    </div>
+    <div class="nb-val" id="recap-note-val">–</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔍 Données à enregistrer</div>
+    <div id="recap-content" class="recap-grid"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goBack()">← Corriger</button>
+    <button class="btn btn-success" id="btn-send" onclick="sendData()">
+      ✅ Enregistrer dans Google Sheets
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 4 : SUCCÈS ════════════════════════════════ -->
+<div class="screen" id="s-success">
+  <div class="card" style="gap:16px; display:flex; flex-direction:column; align-items:center; padding: 40px 20px;">
+    <div class="success-icon">🎉</div>
+    <div class="success-msg">Données enregistrées !</div>
+    <div class="success-sub">Ton entrainement a bien été sauvegardé dans Google Sheets.</div>
+    <div class="btn-row" style="width:100%; max-width:400px; margin-top:10px;">
+      <button class="btn btn-secondary" onclick="newEntry()">➕ Nouvelle saisie</button>
+      <button class="btn btn-outline" onclick="newStudent()">👤 Autre élève</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// 🔧 CONFIG – REMPLACER PAR TON URL APPS SCRIPT
+// ══════════════════════════════════════════════
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6uMypmQrxCk3J-W8JhJD12Xt382o18d22XS8anOHui9XlHWEjkIvqalsccC-9JEwg/exec";
+
+// ══════════════════════════════════════════════
+// BARÈMES
+// ══════════════════════════════════════════════
+const BAREME_DIFFICULTE = {
+  '4ème': { 'TP': 1, '3A': 2, '3B': 3, '3C': 4, '4A': 5, '4B': 6, '4C': 7 },
+  '3ème': { 'TP': 0.5, '3A': 2, '3B': 3, '3C': 4, '4A': 5, '4B': 6, '4C': 7, '5A': 8, '5B': 8, '5C': 8, '6A': 8 }
+};
+
+// Note en fonction du nombre de prises (moins de prises = meilleure note)
+function noteDePrises(n) {
+  if (n <= 9) return 7;
+  if (n === 10) return 6;
+  if (n === 11) return 5;
+  if (n === 12) return 4;
+  if (n === 13) return 3;
+  if (n === 14) return 2;
+  return 1; // 15 et +
+}
+
+function getNiveauScolaire(classe) {
+  if (classe.startsWith('4')) return '4ème';
+  if (classe.startsWith('3')) return '3ème';
+  return null;
+}
+
+// ══════════════════════════════════════════════
+// ÉTAT
+// ══════════════════════════════════════════════
+let state = { classe: '', pseudo: '', type: '', noeud: '' };
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function selectType(t) {
+  state.type = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('btn-' + t).classList.add('selected');
+}
+
+function goBack() {
+  const cur = document.querySelector('.screen.active').id;
+  if (cur === 's-difficulte' || cur === 's-prises') show('s-identity');
+  else if (cur === 's-recap') show(state.type === 'difficulte' ? 's-difficulte' : 's-prises');
+}
+
+function populateNiveauOptions() {
+  const niveau = getNiveauScolaire(state.classe);
+  const sel = document.getElementById('d-niveau');
+  sel.innerHTML = '<option value="">— Sélectionner —</option>';
+  if (!niveau) return;
+  Object.keys(BAREME_DIFFICULTE[niveau]).forEach(k => {
+    sel.innerHTML += `<option value="${k}">${k}</option>`;
+  });
+}
+
+function goToSaisie() {
+  const classe = document.getElementById('classe').value.trim();
+  const pseudo = document.getElementById('pseudo').value.trim();
+  if (!classe) { toast('⚠️ Sélectionne ta classe', true); return; }
+  if (!pseudo) { toast('⚠️ Saisis ton pseudo', true); return; }
+  if (!state.type) { toast('⚠️ Choisis un type de travail', true); return; }
+  state.classe = classe;
+  state.pseudo = pseudo;
+  state.noeud = '';
+  const badge = `${classe} · ${pseudo}`;
+  document.getElementById('identity-badge-d').textContent = badge;
+  document.getElementById('identity-badge-p').textContent = badge;
+
+  // Reset pills
+  document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('selected'));
+
+  if (state.type === 'difficulte') {
+    populateNiveauOptions();
+    document.getElementById('d-voie').value = '';
+    document.getElementById('d-hauteur').value = '';
+    updateNoteDifficulte();
+    show('s-difficulte');
+  } else {
+    document.getElementById('p-voie').value = '';
+    document.getElementById('p-prises').value = '';
+    document.getElementById('p-sommet').value = '';
+    updateNotePrises();
+    show('s-prises');
+  }
+}
+
+function setNoeud(prefix, val) {
+  state.noeud = val;
+  document.getElementById(prefix + '-noeud-oui').classList.toggle('selected', val === 'Oui');
+  document.getElementById(prefix + '-noeud-non').classList.toggle('selected', val === 'Non');
+  if (prefix === 'd') updateNoteDifficulte();
+  else updateNotePrises();
+}
+
+// ══════════════════════════════════════════════
+// CALCUL NOTES EN TEMPS RÉEL
+// ══════════════════════════════════════════════
+function calcNoteFinale(baseNote) {
+  const niveau = getNiveauScolaire(state.classe);
+  let bonusMalus = 0;
+  let finalNote = baseNote;
+  let detail = '';
+
+  if (niveau === '4ème') {
+    if (state.noeud === 'Oui') { bonusMalus = 2; finalNote = baseNote + 2; detail = '(+2 nœud magique)'; }
+    else if (state.noeud === 'Non') { detail = '(pas de bonus nœud magique)'; }
+  } else if (niveau === '3ème') {
+    if (state.noeud === 'Non') { finalNote = 0; detail = '(nœud magique absent → note = 0)'; }
+    else if (state.noeud === 'Oui') { detail = '(nœud magique géré)'; }
+  }
+  return { finalNote, bonusMalus, detail };
+}
+
+function updateNoteDifficulte() {
+  const niveau = getNiveauScolaire(state.classe);
+  const niveauVoie = document.getElementById('d-niveau').value;
+  const hauteur = document.getElementById('d-hauteur').value;
+  const box = document.getElementById('d-note-box');
+  const val = document.getElementById('d-note-val');
+  const det = document.getElementById('d-note-detail');
+
+  if (!niveau || !niveauVoie || !hauteur) {
+    val.textContent = '–';
+    det.textContent = 'Complète la saisie pour voir ta note';
+    box.classList.remove('zero');
+    return;
+  }
+
+  let baseNote = (hauteur === 'Sommet atteint') ? BAREME_DIFFICULTE[niveau][niveauVoie] : 0;
+
+  if (baseNote === 0) {
+    val.textContent = '0';
+    det.textContent = 'Sommet non atteint → note = 0';
+    box.classList.add('zero');
+    return;
+  }
+
+  const { finalNote, detail } = calcNoteFinale(baseNote);
+  val.textContent = finalNote;
+  det.textContent = `Base : ${baseNote} ${detail}`;
+  box.classList.toggle('zero', finalNote === 0);
+}
+
+function updateNotePrises() {
+  const prises = parseInt(document.getElementById('p-prises').value);
+  const sommet = document.getElementById('p-sommet').value;
+  const box = document.getElementById('p-note-box');
+  const val = document.getElementById('p-note-val');
+  const det = document.getElementById('p-note-detail');
+
+  if (!prises || !sommet) {
+    val.textContent = '–';
+    det.textContent = 'Complète la saisie pour voir ta note';
+    box.classList.remove('zero');
+    return;
+  }
+
+  let baseNote = (sommet === 'Oui') ? noteDePrises(prises) : 0;
+
+  if (baseNote === 0) {
+    val.textContent = '0';
+    det.textContent = 'Sommet non atteint → note = 0';
+    box.classList.add('zero');
+    return;
+  }
+
+  const { finalNote, detail } = calcNoteFinale(baseNote);
+  val.textContent = finalNote;
+  det.textContent = `Base : ${baseNote} ${detail}`;
+  box.classList.toggle('zero', finalNote === 0);
+}
+
+// ══════════════════════════════════════════════
+// RÉCAPITULATIF
+// ══════════════════════════════════════════════
+function goToRecap() {
+  let data = {};
+  if (state.type === 'difficulte') {
+    const voie = document.getElementById('d-voie').value.trim();
+    const niveauVoie = document.getElementById('d-niveau').value;
+    const hauteur = document.getElementById('d-hauteur').value;
+    if (!voie) { toast('⚠️ Saisis le n° de voie', true); return; }
+    if (!niveauVoie) { toast('⚠️ Sélectionne le niveau de difficulté', true); return; }
+    if (!hauteur) { toast('⚠️ Sélectionne la hauteur atteinte', true); return; }
+    if (!state.noeud) { toast('⚠️ Réponds à la question nœud magique', true); return; }
+    data = { voie, niveau: niveauVoie, hauteur };
+  } else {
+    const voie = document.getElementById('p-voie').value.trim();
+    const prises = document.getElementById('p-prises').value.trim();
+    const sommet = document.getElementById('p-sommet').value;
+    if (!voie) { toast('⚠️ Saisis le n° de voie', true); return; }
+    if (!prises) { toast('⚠️ Saisis le nombre de prises', true); return; }
+    if (!sommet) { toast('⚠️ Indique si le sommet est atteint', true); return; }
+    if (!state.noeud) { toast('⚠️ Réponds à la question nœud magique', true); return; }
+    data = { voie, prises, sommet };
+  }
+  state.data = data;
+  buildRecap();
+  show('s-recap');
+}
+
+function computeFinalScoreForSave() {
+  const niveau = getNiveauScolaire(state.classe);
+  let baseNote = 0;
+
+  if (state.type === 'difficulte') {
+    baseNote = (state.data.hauteur === 'Sommet atteint') ? BAREME_DIFFICULTE[niveau][state.data.niveau] : 0;
+  } else {
+    baseNote = (state.data.sommet === 'Oui') ? noteDePrises(parseInt(state.data.prises)) : 0;
+  }
+
+  if (baseNote === 0) return { baseNote: 0, bonusMalus: 0, finalNote: 0 };
+
+  const { finalNote, bonusMalus } = calcNoteFinale(baseNote);
+  return { baseNote, bonusMalus, finalNote };
+}
+
+function buildRecap() {
+  const d = state.data;
+  const scores = computeFinalScoreForSave();
+
+  const items = [
+    { label: 'Classe', val: state.classe },
+    { label: 'Pseudo', val: state.pseudo },
+    { label: 'Type de travail', val: state.type === 'difficulte' ? '🏔️ Difficulté de voie' : '✋ Nombre de prises' },
+    { label: 'N° de voie', val: 'Voie ' + d.voie },
+  ];
+  if (state.type === 'difficulte') {
+    items.push({ label: 'Niveau tenté', val: d.niveau });
+    items.push({ label: 'Hauteur atteinte', val: d.hauteur });
+  } else {
+    items.push({ label: 'Nb de prises', val: d.prises });
+    items.push({ label: 'Sommet atteint', val: d.sommet });
+  }
+  items.push({ label: 'Nœud magique', val: state.noeud });
+
+  document.getElementById('recap-content').innerHTML = items.map(i => `
+    <div class="recap-item">
+      <div class="ri-label">${i.label}</div>
+      <div class="ri-val">${i.val}</div>
+    </div>`).join('');
+
+  const box = document.getElementById('recap-note-box');
+  document.getElementById('recap-note-val').textContent = scores.finalNote;
+  document.getElementById('recap-note-detail').textContent =
+    scores.baseNote === 0 ? 'Sommet non atteint' :
+    `Note de base : ${scores.baseNote}${scores.bonusMalus ? ' + ' + scores.bonusMalus + ' bonus' : ''}`;
+  box.classList.toggle('zero', scores.finalNote === 0);
+}
+
+// ══════════════════════════════════════════════
+// ENVOI
+// ══════════════════════════════════════════════
+async function sendData() {
+  const btn = document.getElementById('btn-send');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Envoi…';
+
+  const scores = computeFinalScoreForSave();
+
+  // Colonnes : A=classe B=pseudo C=nbPrises D=voiePrises E=sommet F=difficulte G=hauteur H=voieDifficulte
+  // I=noteDifficulte J=notePrises L=bonusNoeud M=total
+  const row = {
+    classe: state.classe,
+    pseudo: state.pseudo,
+    nbPrises:       state.type === 'prises'     ? state.data.prises  : '',
+    voiePrises:     state.type === 'prises'     ? state.data.voie    : '',
+    sommet:         state.type === 'prises'     ? state.data.sommet  : '',
+    difficulte:     state.type === 'difficulte' ? state.data.niveau  : '',
+    hauteur:        state.type === 'difficulte' ? state.data.hauteur : '',
+    voieDifficulte: state.type === 'difficulte' ? state.data.voie    : '',
+    noteDifficulte: state.type === 'difficulte' ? scores.baseNote    : '',
+    notePrises:     state.type === 'prises'     ? scores.baseNote    : '',
+    bonusNoeud: scores.bonusMalus,
+    total: scores.finalNote
+  };
+
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row)
+    });
+    show('s-success');
+  } catch (e) {
+    toast('❌ Erreur réseau – réessaie', true);
+    btn.disabled = false;
+    btn.innerHTML = '✅ Enregistrer dans Google Sheets';
+  }
+}
+
+// ══════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════
+function newEntry() {
+  document.getElementById('d-voie').value = '';
+  document.getElementById('d-niveau').value = '';
+  document.getElementById('d-hauteur').value = '';
+  document.getElementById('p-voie').value = '';
+  document.getElementById('p-prises').value = '';
+  document.getElementById('p-sommet').value = '';
+  state.type = '';
+  state.noeud = '';
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('selected'));
+  show('s-identity');
+  btnResetSend();
+}
+
+function newStudent() {
+  newEntry();
+  document.getElementById('classe').value = '';
+  document.getElementById('pseudo').value = '';
+  state.classe = '';
+  state.pseudo = '';
+}
+
+function btnResetSend() {
+  const btn = document.getElementById('btn-send');
+  btn.disabled = false;
+  btn.innerHTML = '✅ Enregistrer dans Google Sheets';
+}
+
+// ══════════════════════════════════════════════
+// RECHERCHE PAR PSEUDO
+// ══════════════════════════════════════════════
+async function searchPseudo() {
+  const pseudo = document.getElementById('search-pseudo').value.trim();
+  const resultsDiv = document.getElementById('search-results');
+
+  if (!pseudo) {
+    toast('⚠️ Saisis un pseudo à rechercher', true);
+    return;
+  }
+
+  resultsDiv.innerHTML = '<div class="search-loading"><span class="loader" style="border-top-color: var(--accent2);"></span> Recherche en cours…</div>';
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=search&pseudo=${encodeURIComponent(pseudo)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    renderSearchResults(json.rows || []);
+  } catch (e) {
+    resultsDiv.innerHTML = '<div class="search-empty">❌ Erreur lors de la recherche. Vérifie ta connexion.</div>';
+  }
+}
+
+function renderSearchResults(rows) {
+  const resultsDiv = document.getElementById('search-results');
+
+  if (!rows.length) {
+    resultsDiv.innerHTML = '<div class="search-empty">Aucun résultat trouvé pour ce pseudo.</div>';
+    return;
+  }
+
+  // Séparation par type : difficulté (colonne F non vide) / prises (colonne C non vide)
+  const difficulteRows = rows.filter(r => r.difficulte);
+  const prisesRows = rows.filter(r => r.nbPrises);
+
+  let html = '';
+
+  if (difficulteRows.length) {
+    html += `<div class="search-section-title">🏔️ Difficulté de voie</div>`;
+    html += `<div class="search-table-wrap"><table class="search-table"><thead><tr>
+      <th>Voie</th><th>Difficulté</th><th>Hauteur</th><th>Note</th>
+    </tr></thead><tbody>`;
+    difficulteRows.forEach(r => {
+      const noteClass = (parseFloat(r.noteDifficulte) === 0) ? 'zero' : '';
+      html += `<tr>
+        <td>Voie ${r.voieDifficulte || '–'}</td>
+        <td>${r.difficulte || '–'}</td>
+        <td>${r.hauteur || '–'}</td>
+        <td class="search-note ${noteClass}">${r.noteDifficulte ?? '–'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  if (prisesRows.length) {
+    html += `<div class="search-section-title">✋ Nombre de prises de mains</div>`;
+    html += `<div class="search-table-wrap"><table class="search-table"><thead><tr>
+      <th>Voie</th><th>Nb prises</th><th>Sommet</th><th>Note</th>
+    </tr></thead><tbody>`;
+    prisesRows.forEach(r => {
+      const noteClass = (parseFloat(r.notePrises) === 0) ? 'zero' : '';
+      html += `<tr>
+        <td>Voie ${r.voiePrises || '–'}</td>
+        <td>${r.nbPrises || '–'}</td>
+        <td>${r.sommet || '–'}</td>
+        <td class="search-note ${noteClass}">${r.notePrises ?? '–'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  if (!html) {
+    html = '<div class="search-empty">Aucun résultat trouvé pour ce pseudo.</div>';
+  }
+
+  resultsDiv.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+let toastTimer;
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3000);
+}
+</script>
+</body>
+</html>
