@@ -584,7 +584,9 @@ function goToSaisie() {
   // Reset pills
   document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('selected'));
 
-  if (state.type === 'difficulte') {
+  // Pré-remplit la classe dans la recherche si déjà sélectionnée
+  const classeVal = document.getElementById('classe').value;
+  if (classeVal) document.getElementById('search-classe').value = classeVal;
     populateNiveauOptions();
     document.getElementById('d-voie').value = '';
     document.getElementById('d-hauteur').value = '';
