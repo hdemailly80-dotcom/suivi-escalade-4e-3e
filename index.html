@@ -783,12 +783,8 @@ async function sendData() {
   };
 
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(row)
-    });
+    const params = new URLSearchParams({ action: 'save', ...row });
+    await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
     show('s-success');
   } catch (e) {
     toast('❌ Erreur réseau – réessaie', true);
