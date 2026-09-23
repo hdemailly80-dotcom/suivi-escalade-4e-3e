@@ -500,14 +500,27 @@ async function sendData() {
     bonusNoeud: scores.bonusMalus,
     total: scores.finalNote
   };
-  try {
-    const params = new URLSearchParams({ action: 'save', ...row });
-    await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
-    show('s-success');
-  } catch (e) {
+
+  const params = new URLSearchParams({ action: 'save', callback: 'handleSave', ...row });
+  const script = document.createElement('script');
+  script.src = `${APPS_SCRIPT_URL}?${params.toString()}`;
+  script.onerror = () => {
     toast('❌ Erreur réseau – réessaie', true);
     btn.disabled = false;
     btn.innerHTML = '✅ Enregistrer dans Google Sheets';
+    script.remove();
+  };
+  document.body.appendChild(script);
+  setTimeout(() => script.remove(), 5000);
+}
+
+function handleSave(json) {
+  if (json && json.status === 'ok') {
+    show('s-success');
+  } else {
+    toast('❌ Erreur lors de l\'enregistrement', true);
+    document.getElementById('btn-send').disabled = false;
+    document.getElementById('btn-send').innerHTML = '✅ Enregistrer dans Google Sheets';
   }
 }
 
